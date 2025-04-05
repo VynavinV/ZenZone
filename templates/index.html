@@ -27,7 +27,6 @@
             overflow-x: hidden;
             font-family: 'Space Grotesk', sans-serif;
         }
-        
         /* Navigation and Hamburger Menu */
         .navbar {
             display: flex;
@@ -190,7 +189,7 @@
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 40px;
             margin-bottom: 8px;
         }
         
@@ -229,6 +228,69 @@
             color: #888888;
             font-size: 12px;
         }
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(100%);
+        }
+        
+        /* Audio player styles */
+        .audio-popup {
+            padding: 10px;
+            width: 250px;
+        }
+        
+        .audio-popup h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .audio-popup .decibel-info {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .audio-popup .play-button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .audio-popup .play-button:hover {
+            background-color: #45a049;
+        }
+        
+        .audio-popup .play-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        /* Custom marker icon */
+        .volume-marker-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid white;
+        }
+        
+        .volume-marker-icon i {
+            color: white;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
@@ -249,25 +311,34 @@
     <div class="sidebar" id="sidebar">
         <div class="close-btn" id="close-menu">×</div>
         <ul class="menu-items">
-            <li>
-                <div class="icon">🔍</div>
-                <span>Explore</span>
-            </li>
             <li onclick="window.location.href='/'"> <!-- Added Map button -->
                 <div class="icon">🗺️</div>
                 <span>Map</span>
             </li>
-            <li onclick="window.location.href='/zen-zone'"> <!-- Updated to link to /zen-zone -->
-                <div class="icon">📊</div>
+            <li onclick="window.location.href='/explore'"> <!-- Updated to link to /zen-zone -->
+                <div class="icon">🏞️</div>
                 <span>Activities</span>
             </li>
-            <li>
-                <div class="icon">💰</div>
-                <span>Manage Wallet</span>
+            <li onclick="window.location.href='/report-zen'"> <!-- Updated to link to /zen-zone -->
+                <div class="icon">📊</div>
+                <span>Report Audio</span>
             </li>
-            <li>
-                <div class="icon">👤</div>
-                <span>Account</span>
+            <li onclick="window.location.href='/search'"> <!-- Updated to link to /zen-zone -->
+                <div class="icon">🔍</div>
+                <span>Find ZenZones</span>
+            </li>
+            <li onclick="window.location.href='/discover'"> <!-- Updated to link to /zen-zone -->
+                <div class="icon">🔍</div>
+                <span>Explore Near me</span>
+            </li>
+
+            <li onclick="window.location.href='/redeem'"> <!-- Updated to link to /zen-zone -->
+                <div class="icon">💰</div>
+                <span>Redeem $NOISE</span>
+            </li>
+            <li onclick="window.location.href='/login'"> <!-- Updated to link to /zen-zone -->
+                <div class="icon">🔙</div>
+                <span>Logout</span>
             </li>
         </ul>
     </div>
@@ -291,12 +362,16 @@
         </div>
     </div>
     
+    <!-- Audio player element (hidden) -->
+    <audio id="audio-player" style="display: none;"></audio>
+    
     <script>
         // Menu functionality
         const hamburger = document.getElementById('hamburger-menu');
         const sidebar = document.getElementById('sidebar');
         const closeBtn = document.getElementById('close-menu');
         const overlay = document.getElementById('overlay');
+        const audioPlayer = document.getElementById('audio-player');
         
         hamburger.addEventListener('click', () => {
             sidebar.classList.add('active');
@@ -314,11 +389,65 @@
         // Initialize the map
         const map = L.map('map').setView([0, 0], 2); // Default view
 
-        // Add OpenStreetMap tiles with darker style
+        // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
+
+        function getNoiseLevel(audioData) {
+            const rms = Math.sqrt(audioData.reduce((sum, val) => sum + val ** 2, 0) / audioData.length);
+            return 20 * Math.log10(rms || 1);
+        }
+
+        async function recordAudio() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+            mediaRecorder.start();
+
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        resolve(audioBlob);
+                    };
+                }, 5000); // Record for 5 seconds
+            });
+        }
+
+        async function sendNoiseData() {
+            if (!navigator.geolocation) {
+                console.error('Geolocation is not supported by your browser.');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(async position => {
+                const { latitude, longitude } = position.coords;
+                const location = `${latitude},${longitude}`;
+                const audioBlob = await recordAudio();
+
+                const audioArrayBuffer = await audioBlob.arrayBuffer();
+                const audioData = new Float32Array(audioArrayBuffer);
+                const decibel = getNoiseLevel(audioData);
+
+                const formData = new FormData();
+                formData.append('location', location);
+                formData.append('decibel', decibel);
+                formData.append('audio', audioBlob, 'noise.wav');
+
+                fetch('/api/upload-noise-data', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => console.log('Noise data uploaded:', data))
+                    .catch(error => console.error('Error uploading noise data:', error));
+            });
+        }
 
         function getNoiseColor(decibel) {
             // Decibel range: -45 (green) to -20 (red)
@@ -336,97 +465,146 @@
             return `rgb(${red}, ${green}, 0)`;
         }
 
-        function updateNoiseData() {
+        // Create a custom icon for volume markers
+        function createVolumeIcon(decibel) {
+            const color = getNoiseColor(decibel);
+            
+            // Create a custom icon using HTML
+            const volumeIcon = L.divIcon({
+                className: 'volume-marker-icon',
+                html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white;">
+                        <span style="color: white; font-weight: bold; font-size: 16px;">🔊</span>
+                      </div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
+            });
+            
+            return volumeIcon;
+        }
+
+        // Function to play audio from a URL
+        function playAudio(audioUrl) {
+            if (!audioUrl) {
+                console.error('No audio URL provided');
+                return;
+            }
+            
+            audioPlayer.src = audioUrl;
+            audioPlayer.play().catch(error => {
+                console.error('Error playing audio:', error);
+            });
+        }
+
+        // Add a marker with audio playback functionality
+        function addNoiseMarker(lat, lng, decibel, audioUrl, timestamp) {
+            const color = getNoiseColor(decibel);
+            const icon = createVolumeIcon(decibel);
+            
+            // Format the timestamp
+            const date = timestamp ? new Date(timestamp) : new Date();
+            const formattedDate = date.toLocaleString();
+            
+            // Create the marker
+            const marker = L.marker([lat, lng], { icon: icon }).addTo(map);
+            
+            // Add a circle around the marker (500 meters radius)
+            const circle = L.circle([lat, lng], {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.2,
+                radius: 500 // 500 meters
+            }).addTo(map);
+            
+            // Create popup content with audio player
+            const popupContent = `
+                <div class="audio-popup">
+                    <h3>Noise Recording</h3>
+                    <div class="decibel-info">Noise level: ${decibel.toFixed(2)} dB</div>
+                    <div class="timestamp">Recorded: ${formattedDate}</div>
+                    <button class="play-button" ${audioUrl ? '' : 'disabled'}>
+                        ${audioUrl ? 'Play Audio Sample' : 'No Audio Available'}
+                    </button>
+                </div>
+            `;
+            
+            // Create and bind popup
+            const popup = L.popup().setContent(popupContent);
+            marker.bindPopup(popup);
+            
+            // Add event listener to play button after popup is opened
+            marker.on('popupopen', () => {
+                const playButton = document.querySelector('.play-button');
+                if (playButton && audioUrl) {
+                    playButton.addEventListener('click', () => {
+                        playAudio(audioUrl);
+                    });
+                }
+            });
+            
+            // Return both marker and circle as an object
+            return { marker, circle };
+        }
+
+        // Store markers to be able to remove them later
+        let noiseMarkers = [];
+
+        // Update the fetchAndUpdateNoiseData function to handle both markers and circles
+        function fetchAndUpdateNoiseData() {
             fetch('/api/noise-data')
                 .then(response => response.json())
                 .then(data => {
-                    map.eachLayer((layer) => {
-                        if (layer instanceof L.Circle || layer instanceof L.Marker) {
-                            map.removeLayer(layer); // Clear existing markers and circles
-                        }
+                    console.log("Fetched Noise Data:", data);
+                    
+                    // Clear existing markers and circles
+                    noiseMarkers.forEach(item => {
+                        if (item.marker) map.removeLayer(item.marker);
+                        if (item.circle) map.removeLayer(item.circle);
                     });
+                    noiseMarkers = [];
 
                     data.forEach(entry => {
-                        if (!entry.location || entry.location === "Unknown") {
-                            console.warn('Skipping entry with invalid location:', entry);
-                            return; // Skip invalid locations
-                        }
-
                         const [lat, lng] = entry.location.split(',').map(Number);
-                        if (isNaN(lat) || isNaN(lng)) {
-                            console.warn('Skipping entry with invalid coordinates:', entry);
-                            return; // Skip invalid coordinates
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            console.log(`Adding marker at (${lat}, ${lng}) with decibel: ${entry.decibel}`);
+                            
+                            // Add marker with audio URL and circle
+                            const mapElements = addNoiseMarker(
+                                lat, 
+                                lng, 
+                                entry.decibel, 
+                                entry.audioUrl || `/api/audio/${entry.id}`, // Use direct URL if available or construct API endpoint
+                                entry.timestamp
+                            );
+                            
+                            noiseMarkers.push(mapElements);
+                        } else {
+                            console.warn("Invalid location data:", entry.location);
                         }
-
-                        const decibel = entry.decibel;
-
-                        // Get the color based on the decibel level
-                        const color = getNoiseColor(decibel);
-
-                        // Add a circle to the map
-                        L.circle([lat, lng], {
-                            color: color,
-                            fillColor: color,
-                            fillOpacity: 0.5,
-                            radius: 100
-                        }).addTo(map);
-
-                        // Add a marker at the center of the noise location
-                        L.marker([lat, lng]).addTo(map)
-                            .bindPopup(`Decibel: ${decibel.toFixed(2)} dB`);
                     });
                 })
                 .catch(err => console.error('Error fetching noise data:', err));
         }
 
-        // Fetch noise data every 5 seconds
-        setInterval(updateNoiseData, 5000);
+        // Try to get user's location and center the map
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const { latitude, longitude } = position.coords;
+                map.setView([latitude, longitude], 13);
+            }, error => {
+                console.error('Error getting user location:', error);
+            });
+        }
+
+        // Fetch and update noise data every 5 seconds
+        setInterval(fetchAndUpdateNoiseData, 5000);
 
         // Initial fetch
-        updateNoiseData();
+        fetchAndUpdateNoiseData();
 
-        const socket = io(); // Initialize WebSocket connection
-
-        // Listen for real-time updates
-        socket.on('update_noise_data', (entry) => {
-            if (!entry.location || entry.location === "Unknown") {
-                console.warn('Skipping entry with invalid location:', entry);
-                return; // Skip invalid locations
-            }
-
-            const [lat, lng] = entry.location.split(',').map(Number);
-            if (isNaN(lat) || isNaN(lng)) {
-                console.warn('Skipping entry with invalid coordinates:', entry);
-                return; // Skip invalid coordinates
-            }
-
-            const decibel = entry.decibel;
-
-            // Get the color based on the decibel level
-            const color = getNoiseColor(decibel);
-
-            // Remove existing marker and circle for the location
-            map.eachLayer((layer) => {
-                if (layer instanceof L.Circle || layer instanceof L.Marker) {
-                    const layerLatLng = layer.getLatLng();
-                    if (layerLatLng && layerLatLng.lat === lat && layerLatLng.lng === lng) {
-                        map.removeLayer(layer);
-                    }
-                }
-            });
-
-            // Add updated circle to the map
-            L.circle([lat, lng], {
-                color: color,
-                fillColor: color,
-                fillOpacity: 0.5,
-                radius: 100
-            }).addTo(map);
-
-            // Add updated marker at the center of the noise location
-            L.marker([lat, lng]).addTo(map)
-                .bindPopup(`Decibel: ${decibel.toFixed(2)} dB`);
-        });
+        // Call sendNoiseData every 5 seconds
+        setInterval(sendNoiseData, 5000);
     </script>
 </body>
 </html>
+

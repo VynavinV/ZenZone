@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenZone - Find Your Quiet</title>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Embedded CSS -->
+  <style>
+    /* Reset and Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    /* Updated color scheme */
+    body {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    /* App Container */
+    .app-container {
+      position: relative;
+      min-height: 100vh;
+      padding-bottom: 64px; /* Space for bottom nav */
+    }
+
+    /* Content Wrapper */
+    .content-wrapper {
+      padding: 16px;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      height: 100%;
+    }
+
+    .tab-pane {
+      display: none;
+      height: 100%;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Search Bar */
+    .search-container {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 10px 10px 36px;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border: 1px solid #333;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #0d9488;
+      box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.5);
+    }
+
+    /* Filter Card */
+    .filter-card {
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .filter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .filter-header h2 {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .filter-button {
+      background: none;
+      border: none;
+      color: #aaaaaa;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .filter-button i {
+      margin-right: 4px;
+      font-size: 12px;
+    }
+
+    .filter-button:hover {
+      color: #ffffff;
+    }
+
+    /* Slider */
+    .slider-container {
+      margin-bottom: 16px;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .noise-slider {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e5e7eb;
+      outline: none;
+      border-radius: 2px;
+    }
+
+    .noise-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0d9488;
+      cursor: pointer;
+    }
+
+    .noise-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #0d9488;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Quick Filters */
+    .quick-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .filter-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 9999px;
+      font-size: 14px;
+      color: #aaaaaa;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .filter-badge:hover, .filter-badge.active {
+      background-color: #0d9488;
+      border-color: #0d9488;
+      color: #ffffff;
+    }
+
+    /* Sort Options */
+    .sort-options {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .sort-option {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 9999px;
+      font-size: 14px;
+      white-space: nowrap;
+      color: #aaaaaa;
+      cursor: pointer;
+    }
+
+    .sort-option.active {
+      background-color: #0d9488;
+      color: #ffffff;
+      border-color: #0d9488;
+    }
+
+    .sort-option i {
+      margin-right: 4px;
+      font-size: 12px;
+    }
+
+    /* Search Suggestions */
+    .search-suggestions {
+      margin-bottom: 16px;
+    }
+
+    .suggestions-title {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .suggestions-list {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding-bottom: 8px;
+    }
+
+    .suggestion-item {
+      padding: 6px 12px;
+      background-color: #f3f4f6;
+      border-radius: 9999px;
+      font-size: 14px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background-color: #e5e7eb;
+    }
+
+    /* Discover Section */
+    .discover-section h2 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .places-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    /* Place Card */
+    .place-card {
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .place-image {
+      height: 128px;
+      background-color: #e5e7eb;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .place-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background-color: #0d9488;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background-color: #f59e0b;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .place-details {
+      padding: 12px;
+    }
+
+    .place-details h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .place-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .place-distance {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .db-badge {
+      background-color: #0d9488;
+      color: #ffffff;
+      border: 1px solid #0d9488;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .place-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .place-tag {
+      font-size: 12px;
+      color: #aaaaaa;
+      background-color: #333;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .place-tag:hover {
+      background-color: #444;
+    }
+
+    /* Map Tab */
+    .map-container {
+      position: relative;
+      height: 100vh;
+    }
+
+    .map-placeholder {
+      position: absolute;
+      inset: 0;
+      background-color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .map-icon {
+      font-size: 48px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .map-subtitle {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-top: 8px;
+    }
+
+    .map-search {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 10;
+    }
+
+    .map-filter-button {
+      position: absolute;
+      top: 64px;
+      right: 16px;
+      background-color: white;
+      color: #4b5563;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+    }
+
+    .map-filter-button i {
+      margin-right: 4px;
+      font-size: 12px;
+    }
+
+    /* Profile Tab */
+    .profile-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      background-color: #ccfbf1;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .profile-avatar i {
+      font-size: 40px;
+      color: #0d9488;
+    }
+
+    .profile-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .profile-card > p {
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    .profile-stats {
+      border-top: 1px solid #e5e7eb;
+      padding-top: 24px;
+      margin-bottom: 24px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .stat-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .stat-value {
+      color: #0d9488;
+      font-weight: 600;
+    }
+
+    .edit-profile-button {
+      width: 100%;
+      background-color: #0d9488;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .edit-profile-button:hover {
+      background-color: #0f766e;
+    }
+
+    .settings-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .settings-card h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .settings-list {
+      list-style: none;
+    }
+
+    .settings-list li {
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .settings-list li:hover {
+      background-color: #f9fafb;
+    }
+
+    .settings-list li.logout {
+      color: #ef4444;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background-color: #1a1a1a;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid #333;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #aaaaaa;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: #0d9488;
+    }
+
+    .nav-item i {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item span {
+      font-size: 12px;
+    }
+
+    /* Navigation Bar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border-bottom: 1px solid #333;
+    }
+
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 24px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .hamburger span {
+      display: block;
+      height: 2px;
+      background-color: #ffffff;
+    }
+
+    .account-container {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .account-icon {
+      font-size: 24px;
+      margin-right: 8px;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -100%;
+      width: 250px;
+      height: 100%;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      transition: left 0.3s ease;
+      z-index: 200;
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .close-btn {
+      font-size: 24px;
+      cursor: pointer;
+      padding: 16px;
+      text-align: right;
+    }
+
+    .menu-items {
+      list-style: none;
+      padding: 0;
+    }
+
+    .menu-items li {
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-items li:hover {
+      background-color: #333;
+    }
+
+    .menu-items .icon {
+      margin-right: 8px;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 150;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <div class="navbar">
+    <div class="hamburger" id="hamburger-menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="account-container">
+      <div class="account-icon">👤</div>
+      <div class="account-name">Account</div>
+    </div>
+  </div>
+
+  <!-- Sidebar Menu -->
+  <div class="sidebar" id="sidebar">
+    <div class="close-btn" id="close-menu">×</div>
+    <ul class="menu-items">
+      <li onclick="window.location.href='/'">
+        <div class="icon">🗺️</div>
+        <span>Map</span>
+      </li>
+      <li onclick="window.location.href='/explore'">
+        <div class="icon">🏞️</div>
+        <span>Activities</span>
+      </li>
+      <li onclick="window.location.href='/report-zen'">
+        <div class="icon">📊</div>
+        <span>Report Audio</span>
+      </li>
+      <li onclick="window.location.href='/search'">
+        <div class="icon">🔍</div>
+        <span>Find ZenZones</span>
+      </li>
+      <li onclick="window.location.href='/discover'">
+        <div class="icon">🔍</div>
+        <span>Explore Near me</span>
+      </li>
+      <li>
+        <div class="icon">💰</div>
+        <span>Manage Wallet</span>
+      </li>
+      <li>
+        <div class="icon">👤</div>
+        <span>Account</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <div class="app-container">
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Home Tab -->
+      <div id="home-tab" class="tab-pane active">
+        <div class="content-wrapper">
+          <!-- Search Bar -->
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Search for quiet place for reading, beach, park...">
+          </div>
+          <!-- Filters -->
+          <div class="filter-card">
+            <div class="filter-header">
+              <h2>Noise Level</h2>
+              <button class="filter-button">
+                <i class="fas fa-sliders-h"></i>
+                Filters
+              </button>
+            </div>
+            
+            <!-- Noise Level Slider -->
+            <div class="slider-container">
+              <div class="slider-labels">
+                <span>Quiet</span>
+                <span>Loud</span>
+              </div>
+              <input type="range" min="0" max="100" value="50" class="noise-slider">
+            </div>
+            
+            <!-- Quick Filters -->
+            <div class="quick-filters">
+              <span class="filter-badge active">Most Quiet</span>
+              <span class="filter-badge">Moderate</span>
+              <span class="filter-badge">Most Loud</span>
+            </div>
+            
+            <!-- Sort Options -->
+            <div class="sort-options">
+              <div class="sort-option active">
+                <i class="fas fa-sort"></i>
+                Recommended
+              </div>
+              <div class="sort-option">
+                <i class="fas fa-map-marker-alt"></i>
+                Closest
+              </div>
+              <div class="sort-option">
+                <i class="fas fa-route"></i>
+                Furthest
+              </div>
+              <div class="sort-option">
+                <i class="fas fa-star"></i>
+                Featured
+              </div>
+            </div>
+          </div>
+          
+          <!-- Discover Places -->
+          <div class="discover-section">
+            <h2>Discover Places</h2>
+            <div class="places-grid">
+              <!-- Place Card 1 -->
+              <div class="place-card">
+                <div class="place-image" style="background-image: url('https://picsum.photos/400/200?random=1');">
+                  <span class="place-badge">Quiet</span>
+                  <span class="featured-badge">Featured</span>
+                </div>
+                <div class="place-details">
+                  <h3>Central Park Reading Garden</h3>
+                  <div class="place-info">
+                    <span class="place-distance">0.8 miles away</span>
+                    <span class="db-badge">35 dB</span>
+                  </div>
+                  <div class="place-tags">
+                    <span class="place-tag">Reading</span>
+                    <span class="place-tag">Nature</span>
+                    <span class="place-tag">Peaceful</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Place Card 2 -->
+              <div class="place-card">
+                <div class="place-image" style="background-image: url('https://picsum.photos/400/200?random=2');">
+                  <span class="place-badge">Quiet</span>
+                </div>
+                <div class="place-details">
+                  <h3>Riverside Reading Spot</h3>
+                  <div class="place-info">
+                    <span class="place-distance">1.2 miles away</span>
+                    <span class="db-badge">40 dB</span>
+                  </div>
+                  <div class="place-tags">
+                    <span class="place-tag">Reading</span>
+                    <span class="place-tag">Water</span>
+                    <span class="place-tag">Scenic</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Place Card 3 -->
+              <div class="place-card">
+                <div class="place-image" style="background-image: url('https://picsum.photos/400/200?random=3');">
+                  <span class="place-badge">Moderate</span>
+                </div>
+                <div class="place-details">
+                  <h3>Sunset Beach</h3>
+                  <div class="place-info">
+                    <span class="place-distance">3.5 miles away</span>
+                    <span class="db-badge">45 dB</span>
+                  </div>
+                  <div class="place-tags">
+                    <span class="place-tag">Beach</span>
+                    <span class="place-tag">Sunset</span>
+                    <span class="place-tag">Ocean</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Place Card 4 -->
+              <div class="place-card">
+                <div class="place-image" style="background-image: url('https://picsum.photos/400/200?random=4');">
+                  <span class="place-badge">Quiet</span>
+                </div>
+                <div class="place-details">
+                  <h3>Meditation Center Garden</h3>
+                  <div class="place-info">
+                    <span class="place-distance">1.5 miles away</span>
+                    <span class="db-badge">30 dB</span>
+                  </div>
+                  <div class="place-tags">
+                    <span class="place-tag">Meditation</span>
+                    <span class="place-tag">Zen</span>
+                    <span class="place-tag">Very Quiet</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Map Tab -->
+      <div id="map-tab" class="tab-pane">
+        <div class="map-container">
+          <div class="map-placeholder">
+            <i class="fas fa-map-marked-alt map-icon"></i>
+            <p>Interactive noise map would appear here</p>
+            <p class="map-subtitle">Shows color-coded noise levels across the city</p>
+          </div>
+          
+          <!-- Map Search Overlay -->
+          <div class="map-search">
+            <div class="search-container">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" class="search-input" placeholder="Search for quiet place for reading, beach, park...">
+            </div>
+          </div>
+          
+          <!-- Map Filter Button -->
+          <button class="map-filter-button">
+            <i class="fas fa-sliders-h"></i>
+            Filters
+          </button>
+        </div>
+      </div>
+      
+      <!-- Profile Tab -->
+      <div id="profile-tab" class="tab-pane">
+        <div class="content-wrapper">
+          <div class="profile-card">
+            <div class="profile-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <h2>User Name</h2>
+            <p>user@example.com</p>
+            
+            <div class="profile-stats">
+              <div class="stat-row">
+                <span>ZenCoins Balance:</span>
+                <span class="stat-value">120</span>
+              </div>
+              <div class="stat-row">
+                <span>Contributions:</span>
+                <span class="stat-value">8 places</span>
+              </div>
+            </div>
+            
+            <button class="edit-profile-button">Edit Profile</button>
+          </div>
+          
+          <div class="settings-card">
+            <h3>Account Settings</h3>
+            <ul class="settings-list">
+              <li>Privacy Settings</li>
+              <li>Notification Preferences</li>
+              <li>Connected Devices</li>
+              <li class="logout">Log Out</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-tab="home-tab">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" data-tab="map-tab">
+        <i class="fas fa-map"></i>
+        <span>Map</span>
+      </div>
+      <div class="nav-item" data-tab="profile-tab">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Embedded JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get all navigation items
+      const navItems = document.querySelectorAll('.nav-item');
+      
+      // Add click event to each navigation item
+      navItems.forEach(item => {
+        item.addEventListener('click', function() {
+          // Get the tab to show
+          const tabId = this.getAttribute('data-tab');
+          
+          // Hide all tabs
+          document.querySelectorAll('.tab-pane').forEach(tab => {
+            tab.classList.remove('active');
+          });
+          
+          // Show the selected tab
+          document.getElementById(tabId).classList.add('active');
+          
+          // Update active state on nav items
+          navItems.forEach(navItem => {
+            navItem.classList.remove('active');
+          });
+          
+          // Set this nav item as active
+          this.classList.add('active');
+        });
+      });
+      
+      // Search suggestions functionality
+      const searchInput = document.querySelector('.search-input');
+      const suggestionItems = document.querySelectorAll('.suggestion-item');
+      
+      suggestionItems.forEach(item => {
+        item.addEventListener('click', function() {
+          searchInput.value = this.textContent;
+          // In a real app, this would trigger a search
+        });
+      });
+      
+      // Sort options functionality
+      const sortOptions = document.querySelectorAll('.sort-option');
+      
+      sortOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          // Remove active class from all options
+          sortOptions.forEach(opt => opt.classList.remove('active'));
+          
+          // Add active class to clicked option
+          this.classList.add('active');
+          
+          // In a real app, this would sort the results
+        });
+      });
+      
+      // Filter badges functionality
+      const filterBadges = document.querySelectorAll('.filter-badge');
+      
+      filterBadges.forEach(badge => {
+        badge.addEventListener('click', function() {
+          // Toggle active class
+          this.classList.toggle('active');
+          
+          // In a real app, this would filter the results
+        });
+      });
+
+      // Menu functionality
+      const hamburger = document.getElementById('hamburger-menu');
+      const sidebar = document.getElementById('sidebar');
+      const closeBtn = document.getElementById('close-menu');
+      const overlay = document.getElementById('overlay');
+
+      hamburger.addEventListener('click', () => {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+      });
+
+      function closeMenu() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+      }
+
+      closeBtn.addEventListener('click', closeMenu);
+      overlay.addEventListener('click', closeMenu);
+    });
+  </script>
+</body>
+</html>

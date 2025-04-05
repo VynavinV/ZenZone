@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup Form</title>
+  <style>
+    /* Global Styles */
+    body {
+      background-color: #000; /* black background */
+      color: #fff;            /* white text */
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    h1, h2, p {
+      color: #fff;
+    }
+
+    /* Main Container */
+    .container {
+      width: 100%;
+      max-width: 450px;
+      margin: 20px;
+      padding: 40px;
+      background-color: #111;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Logo and Tagline */
+    .logo-text {
+      font-size: 32px;
+      color: #fff;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .tagline {
+      color: #ccc;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    /* Form Styling */
+    .form-group {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 5px;
+      color: #fff;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #333;
+      border: 1px solid #444;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #0ea5e9;
+    }
+
+    /* Checkbox & Link Styling */
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .checkbox-label {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .signup-link {
+      text-align: center;
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    .signup-link a {
+      color: #0ea5e9;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background-color: #444;
+      margin: 20px 0;
+    }
+
+    .divider-text {
+      color: #ccc;
+      font-size: 14px;
+      text-align: center;
+      margin-top: -12px;
+      background-color: #000;
+      display: inline-block;
+      padding: 0 10px;
+    }
+
+    /* Submit Button Styling */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #0ea5e9;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #1e40af;
+    }
+
+    /* Tooltip Styling */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 120px;
+      background-color: #0f172a;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px 0;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="logo-text">ZenZone</div>
+    <div class="tagline">Create your account</div>
+
+    <form action="#" method="GET">
+      <!-- Name -->
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" class="form-input" placeholder="Enter your full name">
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" class="form-input" placeholder="Enter your email">
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="Create a password">
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirm-password">Confirm Password</label>
+        <input type="password" id="confirm-password" class="form-input" placeholder="Confirm your password">
+      </div>
+
+      <!-- Checkbox -->
+      <div class="form-checkbox">
+        <input type="checkbox" id="terms">
+        <label for="terms" class="checkbox-label">I agree to the terms and conditions</label>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn">Sign Up</button>
+
+      <!-- Divider -->
+      <div class="divider"></div>
+      
+      <!-- Alternative Sign Up -->
+      <div class="divider-text">OR</div>
+
+      <!-- Sign Up Link -->
+      <div class="signup-link">
+        <p>Already have an account? <a href="#" id="loginLink">Log in</a></p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('loginLink').addEventListener('click', function(event) {
+      event.preventDefault();  // Prevent the default link action
+      window.location.href = "/";  // Redirect to the Flask route for index.html
+    });
+  </script>
+
+</body>
+</html>
+

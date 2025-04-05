@@ -8,6 +8,7 @@ from scipy.io.wavfile import write
 from scipy.signal import butter, lfilter
 from flask import Flask, jsonify, render_template, request, g
 from threading import Thread
+from werkzeug.utils import secure_filename
 
 # Create or connect to SQLite database
 db_path = os.path.join(os.getcwd(), "noise_data.db")
@@ -15,19 +16,28 @@ db_path = os.path.join(os.getcwd(), "noise_data.db")
 # Initialize Flask app
 app = Flask(__name__)
 
-# Update database schema to make `location` unique
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS noise_data (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp TEXT NOT NULL,
-    location TEXT NOT NULL UNIQUE,  -- Make location unique
-    decibel REAL NOT NULL
-)
-''')
-conn.commit()
-conn.close()
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'audio_clips')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Ensure the database and table are created at startup
+def initialize_database():
+    """Create the noise_data table if it doesn't exist."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS noise_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        location TEXT NOT NULL UNIQUE,
+        decibel REAL NOT NULL
+    )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Call the function to initialize the database
+initialize_database()
 
 def get_decibel(audio_data):
     """Calculate decibel level from audio data."""
@@ -132,6 +142,32 @@ def zen_zone():
     """Render the Zen Zone page."""
     return render_template('zen_zone.html')
 
+@app.route('/report-zen')
+def report_zen():
+    """Render the Report Zen Zone page."""
+    return render_template('report_zen.html')
+
+@app.route('/explore')
+def explore():
+    return render_template('explore.html')
+
+@app.route('/discover')
+def discover():
+    return render_template('discover.html')
+
+@app.route('/redeem')
+def redeem():
+    return render_template('redeem.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/search')
+def search():
+    return render_template('search.html')
+
+
 @app.route('/api/noise-data')
 def noise_data():
     """Provide noise data as JSON for the frontend."""
@@ -143,6 +179,7 @@ def noise_data():
         {'timestamp': row['timestamp'], 'location': row['location'], 'decibel': row['decibel']}
         for row in rows
     ]
+    print("Noise Data Sent to Client:", data)  # Debugging log
     return jsonify(data)
 
 @app.route('/api/record-zen-zone', methods=['POST'])
@@ -173,6 +210,33 @@ def record_zen_zone():
         return jsonify({'message': 'Zen Zone recorded', 'decibel': decibel}), 200
     else:
         return jsonify({'message': 'Area does not qualify as a Zen Zone', 'decibel': decibel}), 200
+
+@app.route('/api/upload-noise-data', methods=['POST'])
+def upload_noise_data():
+    """Handle uploaded noise data and save to the database."""
+    decibel = request.form.get('decibel')
+    location = request.form.get('location')
+    audio = request.files.get('audio')
+
+    if not decibel or not location or not audio:
+        return jsonify({'error': 'Missing required data'}), 400
+
+    # Save the audio file
+    filename = secure_filename(f"{time.strftime('%Y%m%d%H%M%S')}_noise.wav")
+    audio_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    audio.save(audio_path)
+
+    # Insert data into the database
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+    INSERT INTO noise_data (timestamp, location, decibel)
+    VALUES (?, ?, ?)
+    ''', (time.strftime("%Y-%m-%d %H:%M:%S"), location, float(decibel)))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'Noise data uploaded successfully'}), 200
 
 if __name__ == "__main__":
     try:

@@ -15,7 +15,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
         body {
             background-color: #121212;
             color: #ffffff;
@@ -56,7 +55,13 @@
             border-radius: 3px;
             transition: all 0.3s ease;
         }
-        
+        .sidebar-header {
+            padding: 10px;
+            font-size: 24px;
+            background-color: #1a1a1a;
+            color: #fff;
+            text-align: center;
+        }
         .account-container {
             display: flex;
             align-items: center;
@@ -221,6 +226,12 @@
             opacity: 1;
             visibility: visible;
         }
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(100%);
+        }
     </style>
 </head>
 <body>
@@ -241,13 +252,9 @@
     <div class="sidebar" id="sidebar">
         <div class="close-btn" id="close-menu">×</div>
         <div class="sidebar-header">
-            <h2>enZone</h2>
+            <h2>ZenZone</h2>
         </div>
         <ul class="menu-items">
-            <li>
-                <div class="icon">🔍</div>
-                <span>Explore</span>
-            </li>
             <li onclick="window.location.href='/'">
                 <div class="icon">🗺️</div>
                 <span>Map</span>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenZone - Sound Map</title>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #f8fafc;
+      color: #334155;
+    }
+
+    /* App Container */
+    .app-container {
+      position: relative;
+      min-height: 100vh;
+      padding-bottom: 64px; /* Space for bottom nav */
+    }
+
+    /* Map Container */
+    .map-container {
+      position: relative;
+      height: calc(100vh - 64px);
+      background-color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    /* Map Placeholder */
+    .map-placeholder {
+      position: absolute;
+      inset: 0;
+      background-image: url('https://via.placeholder.com/1000x1500');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.7;
+    }
+
+    /* Map Overlay */
+    .map-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
+      pointer-events: none;
+    }
+
+    /* Heatmap Overlay */
+    .heatmap-overlay {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(
+        circle at 30% 40%, 
+        rgba(16, 185, 129, 0.4) 0%, 
+        rgba(16, 185, 129, 0.1) 20%, 
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 70% 30%, 
+        rgba(16, 185, 129, 0.4) 0%, 
+        rgba(16, 185, 129, 0.1) 25%, 
+        transparent 35%
+      ),
+      radial-gradient(
+        circle at 40% 80%, 
+        rgba(16, 185, 129, 0.4) 0%, 
+        rgba(16, 185, 129, 0.1) 15%, 
+        transparent 25%
+      ),
+      radial-gradient(
+        circle at 80% 70%, 
+        rgba(251, 146, 60, 0.4) 0%, 
+        rgba(251, 146, 60, 0.1) 20%, 
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 20% 20%, 
+        rgba(251, 146, 60, 0.4) 0%, 
+        rgba(251, 146, 60, 0.1) 15%, 
+        transparent 25%
+      ),
+      radial-gradient(
+        circle at 90% 10%, 
+        rgba(239, 68, 68, 0.4) 0%, 
+        rgba(239, 68, 68, 0.1) 15%, 
+        transparent 25%
+      );
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    /* Map Pins */
+    .map-pin {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      z-index: 10;
+    }
+
+    .map-pin:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .map-pin.quiet {
+      color: #10b981;
+    }
+
+    .map-pin.moderate {
+      color: #f59e0b;
+    }
+
+    .map-pin.noisy {
+      color: #ef4444;
+    }
+
+    .pin-1 {
+      top: 40%;
+      left: 30%;
+    }
+
+    .pin-2 {
+      top: 30%;
+      left: 70%;
+    }
+
+    .pin-3 {
+      top: 80%;
+      left: 40%;
+    }
+
+    .pin-4 {
+      top: 70%;
+      left: 80%;
+    }
+
+    .pin-5 {
+      top: 20%;
+      left: 20%;
+    }
+
+    /* Search Bar */
+    .search-container {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 20;
+    }
+
+    .search-bar {
+      display: flex;
+      background-color: white;
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-input-container {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 12px 12px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: transparent;
+    }
+
+    .search-input:focus {
+      outline: none;
+    }
+
+    .filter-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      color: #0ea5e9;
+      font-size: 20px;
+      cursor: pointer;
+      border-left: 1px solid #e2e8f0;
+    }
+
+    /* Filter Tabs */
+    .filter-tabs {
+      position: absolute;
+      top: 76px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      background-color: white;
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 20;
+    }
+
+    .filter-tab {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .filter-tab.active {
+      background-color: #0ea5e9;
+      color: white;
+    }
+
+    /* Legend */
+    .map-legend {
+      position: absolute;
+      bottom: 100px;
+      left: 16px;
+      background-color: white;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 20;
+    }
+
+    .legend-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .legend-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    .color-quiet {
+      background-color: #10b981;
+    }
+
+    .color-moderate {
+      background-color: #f59e0b;
+    }
+
+    .color-noisy {
+      background-color: #ef4444;
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: absolute;
+      bottom: 24px;
+      right: 16px;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 20;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .fab:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .fab i {
+      font-size: 24px;
+    }
+
+    /* Zen Path Button */
+    .zen-path-button {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 20px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      color: white;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 20;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .zen-path-button:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .zen-path-button i {
+      margin-right: 8px;
+      font-size: 16px;
+    }
+
+    /* Pin Info Card */
+    .pin-info-card {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      background-color: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      z-index: 30;
+      display: none;
+    }
+
+    .pin-info-card.active {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translate(-50%, 20px);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+      }
+    }
+
+    .pin-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .pin-info-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .pin-info-close {
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .pin-info-content {
+      margin-bottom: 16px;
+    }
+
+    .pin-info-detail {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .pin-info-detail i {
+      width: 20px;
+      margin-right: 8px;
+      color: #0ea5e9;
+    }
+
+    .pin-info-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .pin-info-button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .button-primary {
+      background-color: #0ea5e9;
+      color: white;
+    }
+
+    .button-secondary {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background-color: white;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid #e2e8f0;
+      z-index: 100;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .nav-item.active {
+      color: #0ea5e9;
+    }
+
+    .nav-item:hover {
+      color: #0ea5e9;
+    }
+
+    .nav-item i {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item span {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Map Container -->
+    <div class="map-container">
+      <!-- Map Placeholder -->
+      <div class="map-placeholder"></div>
+      
+      <!-- Map Overlay -->
+      <div class="map-overlay"></div>
+      
+      <!-- Heatmap Overlay -->
+      <div class="heatmap-overlay"></div>
+      
+      <!-- Map Pins -->
+      <div class="map-pin quiet pin-1">
+        <i class="fas fa-volume-off"></i>
+      </div>
+      
+      <div class="map-pin quiet pin-2">
+        <i class="fas fa-volume-off"></i>
+      </div>
+      
+      <div class="map-pin moderate pin-3">
+        <i class="fas fa-volume-down"></i>
+      </div>
+      
+      <div class="map-pin moderate pin-4">
+        <i class="fas fa-volume-down"></i>
+      </div>
+      
+      <div class="map-pin noisy pin-5">
+        <i class="fas fa-volume-up"></i>
+      </div>
+      
+      <!-- Search Bar -->
+      <div class="search-container">
+        <div class="search-bar">
+          <div class="search-input-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Search for quiet places...">
+          </div>
+          <div class="filter-button">
+            <i class="fas fa-sliders-h"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Filter Tabs -->
+      <div class="filter-tabs">
+        <div class="filter-tab active">All</div>
+        <div class="filter-tab">Meditation</div>
+        <div class="filter-tab">Nap</div>
+        <div class="filter-tab">Study</div>
+        <div class="filter-tab">Events</div>
+      </div>
+      
+      <!-- Map Legend -->
+      <div class="map-legend">
+        <div class="legend-title">Noise Levels</div>
+        <div class="legend-item">
+          <div class="legend-color color-quiet"></div>
+          <span>Quiet (< 35 dB)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color color-moderate"></div>
+          <span>Moderate (35-50 dB)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color color-noisy"></div>
+          <span>Noisy (> 50 dB)</span>
+        </div>
+      </div>
+      
+      <!-- Zen Path Button -->
+      <div class="zen-path-button">
+        <i class="fas fa-route"></i>
+        <span>Find Zen Path</span>
+      </div>
+      
+      <!-- Floating Action Button -->
+      <div class="fab">
+        <i class="fas fa-location-arrow"></i>
+      </div>
+      
+      <!-- Pin Info Card -->
+      <div class="pin-info-card">
+        <div class="pin-info-header">
+          <div class="pin-info-title">Lakeside Meditation Garden</div>
+          <div class="pin-info-close">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+        <div class="pin-info-content">
+          <div class="pin-info-detail">
+            <i class="fas fa-volume-off"></i>
+            <span>28 dB - Very Quiet</span>
+          </div>
+          <div class="pin-info-detail">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>0.8 miles away</span>
+          </div>
+          <div class="pin-info-detail">
+            <i class="fas fa-tag"></i>
+            <span>Meditation, Nature, Peaceful</span>
+          </div>
+        </div>
+        <div class="pin-info-actions">
+          <div class="pin-info-button button-secondary">
+            <i class="fas fa-volume-up"></i> Sound Preview
+          </div>
+          <div class="pin-info-button button-primary">
+            <i class="fas fa-directions"></i> Directions
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <div class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </div>
+      <div class="nav-item active">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>Map</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-spa"></i>
+        <span>Zen</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-trophy"></i>
+        <span>Awards</span>
+      </div>
+      <div class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Profile</span>
+      </div>
+    </nav>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show pin info card when a pin is clicked
+      const pins = document.querySelectorAll('.map-pin');
+      const pinInfoCard = document.querySelector('.pin-info-card');
+      const pinInfoClose = document.querySelector('.pin-info-close');
+      
+      pins.forEach(pin => {
+        pin.addEventListener('click', function() {
+          pinInfoCard.classList.add('active');
+        });
+      });
+      
+      pinInfoClose.addEventListener('click', function() {
+        pinInfoCard.classList.remove('active');
+      });
+      
+      // Filter tabs functionality
+      const filterTabs = document.querySelectorAll('.filter-tab');
+      
+      filterTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          filterTabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

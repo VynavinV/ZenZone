@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>$NOISE Coin Sender</title>
+    <style>
+        body {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        h1 {
+            color: #1abc9c;
+        }
+        button {
+            background-color: #1abc9c;
+            color: #ecf0f1;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #16a085;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        button i {
+            margin-right: 8px;
+        }
+        #coinAmount {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #1abc9c;
+            background-color: #34495e;
+            color: #ecf0f1;
+        }
+        #claimInfo {
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+        #homeButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #1abc9c;
+            color: #ecf0f1;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        #homeButton i {
+            margin-right: 8px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/@thirdweb-dev/sdk@3.11.2/dist/index.umd.js"></script>
+</head>
+<body>
+    <button id="homeButton" onclick="window.location.href='/'"><i class="fas fa-home"></i> Home</button>
+    <div id="unclaimedCoins" style="position: absolute; top: 10px; left: 10px; color: #ecf0f1;"></div>
+    <h1>Claim $NOISE Coin</h1>
+    <div id="claimInfo">Claiming <span id="claimAmount">0</span> out of <span id="totalUnclaimed">0</span> coins</div>
+    <input type="number" id="coinAmount" min="1" placeholder="Enter amount to receive">
+    <button id="connectWallet"><i class="fas fa-wallet"></i> Connect Wallet</button>
+    <button id="sendWaste" disabled><i class="fas fa-paper-plane"></i> Claim $NOISE Coin!</button>
+
+    <script>
+        const tokenAddress = "0x978DE00A564b87AD7f53ba3670de47dB51E402E0"; // Waste Coin address
+        const centralWalletPrivateKey = "{{ central_wallet_address }}"; // Keep this secure
+
+        let userWalletAddress = null;
+        let provider = null;
+        let unclaimedCoins = 0;
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                const signer = provider.getSigner();
+                userWalletAddress = await signer.getAddress();
+                alert("Connected: " + userWalletAddress);
+
+                document.getElementById("sendWaste").disabled = false;
+            } else {
+                alert("Please install MetaMask!");
+            }
+        }
+
+        async function sendWasteCoin() {
+            if (!userWalletAddress) return alert("Connect your wallet first");
+
+            const amountToSend = document.getElementById('coinAmount').value;
+            if (!amountToSend || isNaN(amountToSend) || amountToSend <= 0) {
+                return alert("Please enter a valid amount of coins to receive.");
+            }
+
+            if (amountToSend > unclaimedCoins) {
+                return alert("You cannot receive more coins than you have unclaimed.");
+            }
+
+            const centralWallet = new ethers.Wallet(centralWalletPrivateKey, provider);
+            const tokenContract = new ethers.Contract(
+                tokenAddress,
+                ["function transfer(address to, uint256 amount) public returns (bool)", "function balanceOf(address owner) view returns (uint256)"],
+                centralWallet
+            );
+
+            try {
+                const amountInWei = ethers.utils.parseUnits(amountToSend, 18); // Convert to Wei
+                const balance = await tokenContract.balanceOf(centralWallet.address);
+
+                console.log("Central wallet balance:", balance.toString());
+                console.log("Amount to send:", amountInWei.toString());
+
+                if (balance.lt(amountInWei)) {
+                    return alert("Central wallet balance is insufficient to send Waste Coin.");
+                }
+
+                const tx = await tokenContract.transfer(userWalletAddress, amountInWei, {
+                    gasLimit: 100000 // Set a manual gas limit
+                });
+                alert("Transaction sent: " + tx.hash);
+
+                await tx.wait();
+                alert("Transaction confirmed!");
+
+                // Update unclaimed coins in the database
+                const newUnclaimedCoins = unclaimedCoins - amountToSend;
+                await fetch('/update-unclaimed-coins', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ unclaimed_coins: newUnclaimedCoins })
+                });
+
+                // Update the UI
+                unclaimedCoins = newUnclaimedCoins;
+                document.getElementById('unclaimedCoins').innerText = `Unclaimed Coins: ${unclaimedCoins}`;
+                document.getElementById('totalUnclaimed').innerText = unclaimedCoins;
+                document.getElementById('claimAmount').innerText = 0;
+                document.getElementById('coinAmount').value = '';
+            } catch (error) {
+                console.error("Error sending waste coin:", error);
+                alert("Error: " + error.message);
+            }
+        }
+
+        async function fetchUnclaimedCoins() {
+            const response = await fetch('/get-unclaimed-coins');
+            const data = await response.json();
+            unclaimedCoins = data.unclaimed_coins;
+            document.getElementById('unclaimedCoins').innerText = `Unclaimed Coins: ${unclaimedCoins}`;
+            document.getElementById('totalUnclaimed').innerText = unclaimedCoins;
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchUnclaimedCoins);
+
+        document.getElementById('coinAmount').addEventListener('input', function() {
+            const amount = parseInt(this.value);
+            if (amount > unclaimedCoins) {
+                this.value = unclaimedCoins;
+            }
+            document.getElementById('claimAmount').innerText = this.value;
+        });
+
+        document.getElementById("connectWallet").onclick = connectWallet;
+        document.getElementById("sendWaste").onclick = sendWasteCoin;
+    </script>
+</body>
+</html>

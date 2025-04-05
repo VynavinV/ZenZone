@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Zen Zone</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .mic-button {
+            width: 100px;
+            height: 100px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .mic-button img {
+            width: 50%;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #aaa;
+        }
+        #map {
+            width: 100%;
+            height: 50vh;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mic-button" id="mic-button">
+        <img src="https://cdn-icons-png.flaticon.com/512/727/727245.png" alt="Mic">
+    </div>
+    <div class="status" id="status">Click the mic to start recording.</div>
+    <div id="map"></div>
+
+    <script>
+        const micButton = document.getElementById('mic-button');
+        const status = document.getElementById('status');
+        const map = L.map('map').setView([0, 0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        async function recordAndSendData() {
+            status.textContent = 'Recording...';
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+            mediaRecorder.start();
+
+            setTimeout(() => {
+                mediaRecorder.stop();
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioArrayBuffer = await audioBlob.arrayBuffer();
+                    const audioData = new Float32Array(audioArrayBuffer);
+                    const rms = Math.sqrt(audioData.reduce((sum, val) => sum + val ** 2, 0) / audioData.length);
+                    const decibel = 20 * Math.log10(rms || 1);
+
+                    navigator.geolocation.getCurrentPosition(position => {
+                        const { latitude, longitude } = position.coords;
+                        const location = `${latitude},${longitude}`;
+
+                        const formData = new FormData();
+                        formData.append('location', location);
+                        formData.append('decibel', decibel);
+                        formData.append('audio', audioBlob, 'noise.wav');
+
+                        fetch('/api/upload-noise-data', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                status.textContent = `Decibel: ${decibel.toFixed(2)} dB | Location: ${location}`;
+                                // Add the new circle to the map
+                                const color = `rgb(${Math.min(255, Math.max(0, 255 - decibel * 5))}, ${Math.min(255, Math.max(0, decibel * 5))}, 0)`;
+                                L.circle([latitude, longitude], {
+                                    color: color,
+                                    fillColor: color,
+                                    fillOpacity: 0.5,
+                                    radius: 100
+                                }).addTo(map);
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                status.textContent = 'Error uploading data.';
+                            });
+                    });
+                };
+            }, 5000); // Record for 5 seconds
+        }
+
+        micButton.addEventListener('click', recordAndSendData);
+    </script>
+</body>
+</html>
